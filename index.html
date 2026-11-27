@@ -12,7 +12,7 @@ body{margin:0;font-family:Arial,Tahoma;background:#f2f6f4;color:#183d34}
 header{background:#087f6b;color:white;padding:23px 18px;border-radius:0 0 22px 22px}
 header h1{margin:0;font-size:28px}
 main{max-width:700px;margin:auto;padding:14px}
-.panel,.shop,.cart{background:white;border-radius:15px;padding:15px;margin:12px 0;box-shadow:0 2px 10px #0001}
+.panel,.shop,.cart,.order-card{background:white;border-radius:15px;padding:15px;margin:12px 0;box-shadow:0 2px 10px #0001}
 h2{font-size:20px}
 button{border:0;border-radius:10px;padding:12px;background:#087f6b;color:white;font-weight:bold;cursor:pointer}
 input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:10px;font-size:16px;margin:5px 0}
@@ -33,9 +33,27 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:10px;fo
 .cartline{display:flex;justify-content:space-between;padding:7px 0}
 .admin{border:2px solid #087f6b}
 .notice{padding:10px;background:#e6f2ed;border-radius:10px;margin:10px 0}
+.order-card{border:1px solid #dce9e3}
+.order-card.new{border-right:5px solid #087f6b}
+.order-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.order-status{padding:6px 10px;border-radius:20px;background:#e6f2ed;color:#087f6b;font-size:13px;font-weight:bold}
+.order-detail{padding:7px 0;border-bottom:1px solid #eee;overflow-wrap:anywhere}
+.order-items{background:#f5f8f6;padding:10px;border-radius:10px;margin:10px 0}
+.order-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.order-actions button{flex:1;min-width:100px}
+#orderToast{position:fixed;top:12px;left:12px;right:12px;max-width:600px;margin:auto;background:#087f6b;color:white;padding:16px;border-radius:14px;box-shadow:0 5px 20px #0003;z-index:9999;display:none}
+#orderToast button{background:white;color:#087f6b;margin-right:8px}
+.new-count{background:#c62828;color:white;border-radius:20px;padding:3px 9px;font-size:13px}
+.empty-orders{text-align:center;color:#777;padding:20px}
 </style>
 </head>
 <body>
+
+<div id="orderToast">
+  <b>🔔 وصل طلب جديد!</b>
+  <div id="toastText" style="margin-top:7px"></div>
+  <button onclick="hideOrderToast()">حسناً</button>
+</div>
 
 <header>
 <h1>🚀 وصلني</h1>
@@ -68,7 +86,7 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:10px;fo
 <div id="details" class="panel hidden"></div>
 
 <div class="panel">
-<button class="secondary" style="width:100%" onclick="toggleLogin()">⚙️ إدارة المنتجات</button>
+<button class="secondary" style="width:100%" onclick="toggleLogin()">⚙️ إدارة المنتجات والطلبات</button>
 </div>
 
 <div id="loginPanel" class="panel hidden admin">
@@ -80,9 +98,27 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:10px;fo
 </div>
 
 <div id="adminPanel" class="panel hidden admin">
-<h2>⚙️ إدارة المنتجات</h2>
-<div class="notice">أنت داخل لوحة إدارة وصلني. اختر المحل لإضافة منتجاته.</div>
+<h2>⚙️ إدارة وصلني</h2>
+<div class="notice">أنت داخل لوحة إدارة وصلني.</div>
 <p id="adminUser"></p>
+
+<!-- قسم الطلبات -->
+<div class="panel" style="border:2px solid #087f6b">
+  <div class="order-head">
+    <h2 style="margin:5px 0">📦 الطلبات الواردة</h2>
+    <span id="newOrderCount" class="new-count">0 جديد</span>
+  </div>
+  <div class="notice">
+    الطلبات تظهر هنا مباشرة عند وصولها من تطبيق الزبون، طالما أنت داخل الإدارة.
+  </div>
+  <div id="ordersMessage">جاري تحميل الطلبات...</div>
+  <div id="ordersList"></div>
+</div>
+
+<hr style="border:0;border-top:1px solid #ddd;margin:20px 0">
+
+<h2>إدارة المنتجات</h2>
+<div class="notice">اختر المحل لإضافة منتجاته أو تعديلها.</div>
 <label>اختر المحل</label>
 <select id="adminShop" onchange="loadAdminProducts()"></select>
 
@@ -142,6 +178,11 @@ let activeShop=null;
 let cart=[];
 let editingId=null;
 let currentProducts=[];
+
+let ordersUnsubscribe=null;
+let knownOrderIds=new Set();
+let ordersFirstLoad=true;
+let currentOrders=[];
 
 function safe(v){
  return String(v??"").replace(/[&<>"']/g,c=>({
@@ -268,7 +309,7 @@ function removeItem(i){cart.splice(i,1);drawCart();}
 function checkout(){
  if(!cart.length){alert("السلة فارغة");return;}
  alert("طلب تجريبي بقيمة "+money(cart.reduce((a,x)=>a+x.price,0))+
- "\nالدفع كاش عند الاستلام.\nلم يتم إرسال الطلب فعلياً إلى المحل بعد.");
+ "\nالدفع كاش عند الاستلام.\nلم يتم إرسال الطلب فعلياً من هذه الشاشة.");
 }
 
 function toggleLogin(){
@@ -276,6 +317,9 @@ function toggleLogin(){
  if(auth.currentUser&&auth.currentUser.email===ADMIN_EMAIL){
   document.getElementById("adminPanel").classList.toggle("hidden");
   loadAdminShopList();
+  if(!document.getElementById("adminPanel").classList.contains("hidden")){
+   startOrdersListener();
+  }
  }else{
   loginPanel.classList.toggle("hidden");
  }
@@ -289,18 +333,206 @@ async function login(){
   await auth.signInWithEmailAndPassword(email,password);
  }catch(e){msg.textContent="فشل الدخول: "+e.message;}
 }
+
 auth.onAuthStateChanged(user=>{
  const admin=user&&user.email&&user.email.toLowerCase()===ADMIN_EMAIL;
  document.getElementById("adminPanel").classList.toggle("hidden",!admin);
  document.getElementById("loginPanel").classList.toggle("hidden",!!admin);
+
  if(admin){
   document.getElementById("adminUser").textContent="مسجل الدخول: "+user.email;
   loadAdminShopList();
- }else if(user){
-  auth.signOut();
+  startOrdersListener();
+ }else{
+  stopOrdersListener();
+  if(user)auth.signOut();
  }
 });
-async function logout(){await auth.signOut();}
+
+async function logout(){
+ stopOrdersListener();
+ await auth.signOut();
+}
+
+function startOrdersListener(){
+ if(ordersUnsubscribe)return;
+
+ ordersFirstLoad=true;
+ document.getElementById("ordersMessage").textContent="جاري تحميل الطلبات...";
+
+ ordersUnsubscribe=db.collection("orders")
+  .orderBy("createdAt","desc")
+  .limit(50)
+  .onSnapshot(snapshot=>{
+   const incoming=[];
+
+   snapshot.docChanges().forEach(change=>{
+    if(change.type==="added"){
+     const id=change.doc.id;
+
+     if(ordersFirstLoad){
+      knownOrderIds.add(id);
+     }else if(!knownOrderIds.has(id)){
+      knownOrderIds.add(id);
+      const data=change.doc.data();
+      showNewOrderNotification(data);
+     }
+    }
+   });
+
+   currentOrders=snapshot.docs.map(doc=>({
+    id:doc.id,
+    ...doc.data()
+   }));
+
+   ordersFirstLoad=false;
+   renderOrders();
+  },error=>{
+   console.error("Orders listener error:",error);
+   document.getElementById("ordersMessage").textContent=
+    "تعذر تحميل الطلبات: "+error.message+
+    " — تأكد من صلاحيات قراءة الطلبات في Firestore.";
+  });
+}
+
+function stopOrdersListener(){
+ if(ordersUnsubscribe){
+  ordersUnsubscribe();
+  ordersUnsubscribe=null;
+ }
+ knownOrderIds.clear();
+ currentOrders=[];
+}
+
+function showNewOrderNotification(order){
+ const customer=order.customerName||"عميل جديد";
+ const shop=order.shopName||"المحل";
+ const toast=document.getElementById("orderToast");
+
+ document.getElementById("toastText").textContent=
+  "العميل: "+customer+" — المحل: "+shop+
+  " — المجموع: "+money(order.total);
+
+ toast.style.display="block";
+
+ // اهتزاز خفيف إذا كان الجهاز يدعم ذلك
+ if(navigator.vibrate)navigator.vibrate([200,100,200]);
+}
+
+function hideOrderToast(){
+ document.getElementById("orderToast").style.display="none";
+}
+
+function orderDate(value){
+ if(!value)return "غير محدد";
+ try{
+  const date=value.toDate?value.toDate():new Date(value);
+  return date.toLocaleString("ar-SY");
+ }catch(e){return "غير محدد";}
+}
+
+function orderStatus(status){
+ const labels={
+  new:"طلب جديد",
+  preparing:"قيد التجهيز",
+  ready:"جاهز",
+  delivered:"تم التسليم",
+  rejected:"مرفوض"
+ };
+ return labels[status]||status||"غير محدد";
+}
+
+function renderOrders(){
+ const box=document.getElementById("ordersList");
+ const msg=document.getElementById("ordersMessage");
+
+ const newCount=currentOrders.filter(o=>(o.status||"new")==="new").length;
+ document.getElementById("newOrderCount").textContent=newCount+" جديد";
+
+ if(!currentOrders.length){
+  msg.textContent="لا توجد طلبات حتى الآن.";
+  box.innerHTML="";
+  return;
+ }
+
+ msg.textContent="عدد الطلبات المعروضة: "+currentOrders.length;
+
+ box.innerHTML=currentOrders.map(order=>{
+  const status=order.status||"new";
+  const items=Array.isArray(order.items)?order.items:[];
+  const itemHtml=items.map(item=>{
+   const name=item.name||item.productName||"منتج";
+   const qty=Number(item.quantity||item.qty||1);
+   const price=Number(item.price||0);
+   const subtotal=Number(item.subtotal||item.total||price*qty);
+
+   return `<div class="order-detail">
+    ${safe(name)} — الكمية: ${qty}
+    — السعر: ${money(price)}
+    — الإجمالي: ${money(subtotal)}
+   </div>`;
+  }).join("");
+
+  return `
+  <div class="order-card ${status==="new"?"new":""}">
+   <div class="order-head">
+    <b>طلب رقم: ${safe(order.id.slice(0,8))}</b>
+    <span class="order-status">${safe(orderStatus(status))}</span>
+   </div>
+
+   <div class="order-detail"><b>العميل:</b> ${safe(order.customerName||"غير محدد")}</div>
+   <div class="order-detail"><b>الهاتف:</b> ${safe(order.phone||"غير محدد")}</div>
+   <div class="order-detail"><b>المنطقة:</b> ${safe(order.area||"غير محددة")}</div>
+   <div class="order-detail"><b>العنوان:</b> ${safe(order.address||"غير محدد")}</div>
+   <div class="order-detail"><b>المحل:</b> ${safe(order.shopName||order.shopId||"غير محدد")}</div>
+   <div class="order-detail"><b>وقت الطلب:</b> ${safe(orderDate(order.createdAt))}</div>
+
+   <div class="order-items">
+    <b>المنتجات المطلوبة:</b>
+    ${itemHtml||"<p>تفاصيل المنتجات غير متوفرة.</p>"}
+   </div>
+
+   ${order.notes?`<div class="order-detail"><b>ملاحظات العميل:</b> ${safe(order.notes)}</div>`:""}
+
+   <div class="order-detail"><b>طريقة الدفع:</b> نقداً عند الاستلام</div>
+   <div class="order-detail"><b>المجموع:</b> <span class="price">${money(order.total)}</span></div>
+
+   <div class="order-actions">
+    <button onclick="updateOrderStatus('${safe(order.id)}','preparing')">قيد التجهيز</button>
+    <button onclick="updateOrderStatus('${safe(order.id)}','ready')">جاهز</button>
+    <button onclick="updateOrderStatus('${safe(order.id)}','delivered')">تم التسليم</button>
+    <button style="background:#b83232" onclick="updateOrderStatus('${safe(order.id)}','rejected')">رفض الطلب</button>
+   </div>
+  </div>`;
+ }).join("");
+}
+
+async function updateOrderStatus(orderId,status){
+ if(!auth.currentUser||auth.currentUser.email!==ADMIN_EMAIL){
+  alert("يجب تسجيل الدخول بحساب الإدارة.");
+  return;
+ }
+
+ const labels={
+  preparing:"قيد التجهيز",
+  ready:"جاهز",
+  delivered:"تم التسليم",
+  rejected:"مرفوض"
+ };
+
+ if(!confirm("هل تريد تغيير حالة الطلب إلى: "+labels[status]+"؟"))return;
+
+ try{
+  await db.collection("orders").doc(orderId).update({
+   status:status,
+   updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  alert("تم تحديث حالة الطلب.");
+ }catch(e){
+  console.error(e);
+  alert("تعذر تحديث حالة الطلب: "+e.message);
+ }
+}
 
 function loadAdminShopList(){
  const select=document.getElementById("adminShop");
@@ -311,6 +543,7 @@ function loadAdminShopList(){
  if(previous&&shops.some(s=>s.id===previous))select.value=previous;
  loadAdminProducts();
 }
+
 async function loadAdminProducts(){
  const id=document.getElementById("adminShop").value;
  const box=document.getElementById("adminProducts");
@@ -328,14 +561,17 @@ async function loadAdminProducts(){
   </div>`).join(""):"لا توجد منتجات لهذا المحل.";
  }catch(e){box.innerHTML="تعذر تحميل المنتجات. تحقق من قواعد Firestore.";console.error(e);}
 }
+
 async function saveProduct(){
  const shopId=document.getElementById("adminShop").value;
  const name=document.getElementById("productName").value.trim();
  const price=Number(document.getElementById("productPrice").value);
  const file=document.getElementById("productImage").files[0];
+
  if(!shopId||!name||!Number.isFinite(price)||price<=0){
   alert("اختر محلاً واكتب اسم المنتج وسعراً صحيحاً.");return;
  }
+
  try{
   let imageUrl="";
   if(file){
@@ -344,9 +580,12 @@ async function saveProduct(){
    await ref.put(file);
    imageUrl=await ref.getDownloadURL();
   }
+
   const data={name,price,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
   if(imageUrl)data.imageUrl=imageUrl;
+
   const ref=db.collection("shops").doc(shopId).collection("products");
+
   if(editingId){
    if(!imageUrl){
     const old=currentProducts.find(p=>p.id===editingId);
@@ -357,12 +596,14 @@ async function saveProduct(){
    data.createdAt=firebase.firestore.FieldValue.serverTimestamp();
    await ref.add(data);
   }
+
   alert("تم حفظ المنتج بنجاح.");
   resetForm();
   await loadAdminProducts();
   if(activeShop&&activeShop.id===shopId)openShop(shopId);
  }catch(e){alert("لم يتم الحفظ: "+e.message);console.error(e);}
 }
+
 function editProduct(id){
  const p=currentProducts.find(x=>x.id===id);
  if(!p)return;
@@ -373,6 +614,7 @@ function editProduct(id){
  document.getElementById("cancelEdit").classList.remove("hidden");
  document.getElementById("productForm").scrollIntoView({behavior:"smooth"});
 }
+
 async function deleteProduct(id){
  if(!confirm("هل أنت متأكد من حذف هذا المنتج؟"))return;
  try{
@@ -382,6 +624,7 @@ async function deleteProduct(id){
   alert("تم حذف المنتج.");
  }catch(e){alert("تعذر الحذف: "+e.message);}
 }
+
 function resetForm(){
  editingId=null;
  document.getElementById("productName").value="";
