@@ -9,44 +9,45 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,Tahoma;background:#f2f6f4;color:#183d34}
-header{background:#087f6b;color:white;padding:25px 18px;border-radius:0 0 25px 25px}
+header{background:#087f6b;color:white;padding:23px 18px;border-radius:0 0 22px 22px}
 header h1{margin:0;font-size:28px}
-header p{margin:8px 0 0}
-main{max-width:650px;margin:auto;padding:15px}
-.panel,.shop,.cart{background:white;border-radius:16px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
+main{max-width:700px;margin:auto;padding:14px}
+.panel,.shop,.cart{background:white;border-radius:15px;padding:15px;margin:12px 0;box-shadow:0 2px 10px #0001}
 h2{font-size:20px}
 button{border:0;border-radius:10px;padding:12px;background:#087f6b;color:white;font-weight:bold;cursor:pointer}
-input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:10px;font-size:16px}
-.areas{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.area{padding:25px 8px;font-size:19px}
+input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:10px;font-size:16px;margin:5px 0}
 .hidden{display:none!important}
-.categories{display:flex;gap:8px;overflow:auto;padding:10px 0}
+.areas{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.area{padding:20px 5px;font-size:17px}
+.shop{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.shop small{display:block;color:#777;margin-top:6px}
+.secondary{background:#e6f2ed;color:#087f6b}
+.categories{display:flex;gap:7px;overflow:auto;padding:10px 0}
 .categories button{white-space:nowrap;background:#e6f2ed;color:#087f6b}
 .categories button.active{background:#087f6b;color:white}
-.shop{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.shop b{font-size:17px}
-.shop small{display:block;color:#777;margin-top:7px}
-.product{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 0;border-bottom:1px solid #eee}
+.product{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #eee}
+.product img{width:75px;height:75px;object-fit:cover;border-radius:10px}
+.product-info{flex:1}
 .price{color:#087f6b;font-weight:bold}
-.secondary{background:#e6f2ed;color:#087f6b}
-.cart{position:sticky;bottom:5px}
-.cartline{display:flex;justify-content:space-between;padding:8px 0}
+.cart{position:sticky;bottom:5px;z-index:3}
+.cartline{display:flex;justify-content:space-between;padding:7px 0}
+.admin{border:2px solid #087f6b}
+.notice{padding:10px;background:#e6f2ed;border-radius:10px;margin:10px 0}
 </style>
 </head>
 <body>
+
 <header>
 <h1>🚀 وصلني</h1>
 <p>كل طلباتك لحد باب بيتك</p>
 </header>
 
 <main>
+
 <section id="areas" class="panel">
 <h2>اختر منطقتك</h2>
 <p>أهلاً بك في وصلني، أين تريد الطلب؟</p>
-<div class="areas">
-<button class="area" onclick="choose('الرحيبة')">📍 الرحيبة</button>
-<button class="area" onclick="choose('القطيفة')">📍 القطيفة</button>
-</div>
+<div id="areaButtons" class="areas"></div>
 </section>
 
 <section id="market" class="hidden">
@@ -59,27 +60,45 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:10px;fo
 
 <div class="panel">
 <h2>المحلات والمتاجر</h2>
-<input id="search" placeholder="ابحث عن محل..." oninput="render()">
+<input id="search" placeholder="ابحث عن محل..." oninput="renderShops()">
 <div id="categories" class="categories"></div>
-<button onclick="showAdd()">＋ إضافة محل جديد</button>
 </div>
 
 <div id="shops"></div>
 <div id="details" class="panel hidden"></div>
 
-<div id="addPanel" class="panel hidden">
-<h2>إضافة محل</h2>
-<input id="shopName" placeholder="اسم المحل">
-<select id="shopCategory" style="margin-top:10px">
-<option>سوبرماركت</option>
-<option>مطاعم</option>
-<option>خضار وفواكه</option>
-<option>صيدليات</option>
-<option>حلويات</option>
-<option>ألبسة</option>
-<option>موبايلات</option>
-</select>
-<button style="margin-top:10px" onclick="saveShop()">حفظ المحل</button>
+<div class="panel">
+<button class="secondary" style="width:100%" onclick="toggleLogin()">⚙️ إدارة المنتجات</button>
+</div>
+
+<div id="loginPanel" class="panel hidden admin">
+<h2>دخول الإدارة</h2>
+<input id="adminEmail" type="email" placeholder="البريد الإلكتروني">
+<input id="adminPassword" type="password" placeholder="كلمة المرور">
+<button style="width:100%" onclick="login()">تسجيل الدخول</button>
+<p id="loginMessage"></p>
+</div>
+
+<div id="adminPanel" class="panel hidden admin">
+<h2>⚙️ إدارة المنتجات</h2>
+<div class="notice">أنت داخل لوحة إدارة وصلني. اختر المحل لإضافة منتجاته.</div>
+<p id="adminUser"></p>
+<label>اختر المحل</label>
+<select id="adminShop" onchange="loadAdminProducts()"></select>
+
+<div id="productForm">
+<h3 id="formTitle">إضافة منتج جديد</h3>
+<input id="productName" placeholder="اسم المنتج">
+<input id="productPrice" type="number" min="0" placeholder="السعر بالليرة السورية">
+<label>صورة المنتج (اختياري)</label>
+<input id="productImage" type="file" accept="image/*">
+<button style="width:100%;margin-top:8px" onclick="saveProduct()">حفظ المنتج</button>
+<button id="cancelEdit" class="secondary hidden" style="width:100%;margin-top:8px" onclick="resetForm()">إلغاء التعديل</button>
+</div>
+
+<h3>منتجات المحل</h3>
+<div id="adminProducts"></div>
+<button class="secondary" style="width:100%;margin-top:12px" onclick="logout()">تسجيل الخروج</button>
 </div>
 </section>
 
@@ -88,117 +107,291 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:10px;fo
 <div id="items">السلة فارغة</div>
 <p>المجموع: <b id="total" class="price">0 ل.س</b></p>
 <p>طريقة الدفع: كاش عند الاستلام</p>
-<button style="width:100%" onclick="checkout()">تأكيد الطلب التجريبي</button>
+<button style="width:100%" onclick="checkout()">تأكيد الطلب</button>
 </section>
+
 </main>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
 <script>
-let area='';
-let category='الكل';
-let active=null;
+const firebaseConfig = {
+ apiKey:"AIzaSyB09M1xrKbIn-KdR3ECGeejOs-b_KiUrvM",
+ authDomain:"wasalni-app-84bf8.firebaseapp.com",
+ projectId:"wasalni-app-84bf8",
+ storageBucket:"wasalni-app-84bf8.firebasestorage.app",
+ messagingSenderId:"809477616745",
+ appId:"1:809477616745:web:65ce7b258e2c7296f55ef8",
+ measurementId:"G-5V4D991Y0H"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth();
+const db=firebase.firestore();
+const storage=firebase.storage();
+
+const ADMIN_EMAIL="ybaaleh@gmail.com";
+
+let shops=[];
+let area="";
+let category="الكل";
+let activeShop=null;
 let cart=[];
+let editingId=null;
+let currentProducts=[];
 
-let shops=[
-{id:1,area:'الرحيبة',name:'ماركت الحارة',cat:'سوبرماركت',products:[['مياه شرب',5000],['خبز',3000],['مواد غذائية',30000]]},
-{id:2,area:'الرحيبة',name:'مطعم الوجبة الطيبة',cat:'مطاعم',products:[['وجبة برغر',45000],['وجبة دجاج',55000]]},
-{id:3,area:'الرحيبة',name:'خضار وفواكه الخير',cat:'خضار وفواكه',products:[['سلة خضار',25000],['سلة فواكه',35000]]},
-{id:4,area:'القطيفة',name:'سوبرماركت السوق',cat:'سوبرماركت',products:[['مياه شرب',5000],['مواد تموينية',40000]]},
-{id:5,area:'القطيفة',name:'مطعم البيت الشامي',cat:'مطاعم',products:[['فروج مشوي',70000],['شاورما',25000]]},
-{id:6,area:'القطيفة',name:'صيدلية تجريبية',cat:'صيدليات',products:[['طلب صيدلية تجريبي',25000]]}
-];
+function safe(v){
+ return String(v??"").replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ }[c]));
+}
+function money(n){
+ return Number(n||0).toLocaleString("en-US")+" ل.س";
+}
+function shopName(d,id){
+ if(d.name||d.Name||d.الاسم||d.shopName)return d.name||d.Name||d.الاسم||d.shopName;
+ let key=Object.keys(d).find(k=>d[k]==="محل"&&k!=="المنطقة");
+ return key||id;
+}
+function shopArea(d){
+ return d.area||d.Area||d.المنطقة||"غير محددة";
+}
+function isActive(d){
+ return !(d.Active===false||d.active===false);
+}
 
-let extra=JSON.parse(localStorage.getItem('wasalni_shops')||'[]');
-shops=shops.concat(extra);
+async function loadShops(){
+ try{
+  const snap=await db.collection("shops").get();
+  shops=snap.docs.map(doc=>{
+   const d=doc.data();
+   return {id:doc.id,name:shopName(d,doc.id),area:shopArea(d),data:d};
+  }).filter(s=>isActive(s.data));
+  showAreas();
+ }catch(e){
+  alert("تعذر تحميل المحلات. تحقق من قواعد Firestore والاتصال.");
+  console.error(e);
+ }
+}
 
-function choose(a){
-area=a;
-document.getElementById('areas').classList.add('hidden');
-document.getElementById('market').classList.remove('hidden');
-document.getElementById('cart').classList.remove('hidden');
-document.getElementById('areaName').textContent=a;
-categories();
-render();
+function showAreas(){
+ const list=[...new Set(shops.map(s=>s.area))].filter(a=>a&&a!=="غير محددة");
+ document.getElementById("areaButtons").innerHTML=list.map(a=>
+ `<button class="area" onclick="chooseArea('${safe(a)}')">📍 ${safe(a)}</button>`
+ ).join("")||"لا توجد محلات متاحة حالياً.";
+}
+function chooseArea(a){
+ area=a;
+ category="الكل";
+ document.getElementById("areas").classList.add("hidden");
+ document.getElementById("market").classList.remove("hidden");
+ document.getElementById("cart").classList.remove("hidden");
+ document.getElementById("areaName").textContent=a;
+ document.getElementById("search").value="";
+ categories();
+ renderShops();
 }
 function back(){
-document.getElementById('market').classList.add('hidden');
-document.getElementById('cart').classList.add('hidden');
-document.getElementById('areas').classList.remove('hidden');
+ document.getElementById("market").classList.add("hidden");
+ document.getElementById("cart").classList.add("hidden");
+ document.getElementById("areas").classList.remove("hidden");
+ document.getElementById("details").classList.add("hidden");
 }
 function categories(){
-let cats=['الكل','سوبرماركت','مطاعم','خضار وفواكه','صيدليات','حلويات','ألبسة','موبايلات'];
-document.getElementById('categories').innerHTML=cats.map(c=>
-`<button class="${c===category?'active':''}" onclick="setCat('${c}')">${c}</button>`
-).join('');
+ const cats=["الكل","سوبرماركت","مطاعم","خضار وفواكه","صيدليات","حلويات","ألبسة","موبايلات"];
+ document.getElementById("categories").innerHTML=cats.map(c=>
+ `<button class="${c===category?'active':''}" onclick="setCategory('${c}')">${c}</button>`
+ ).join("");
 }
-function setCat(c){category=c;categories();render();}
-function render(){
-let q=document.getElementById('search').value.toLowerCase();
-let list=shops.filter(s=>s.area===area&&
-(category==='الكل'||s.cat===category)&&
-s.name.toLowerCase().includes(q));
-document.getElementById('shops').innerHTML=list.length?
-list.map(s=>`
-<div class="shop">
-<div><b>${safe(s.name)}</b><small>${safe(s.cat)} • ${safe(s.area)}</small></div>
-<button onclick="openShop(${s.id})">عرض المحل</button>
-</div>`).join(''):
-'<div class="panel">لا توجد محلات حالياً بهذا القسم.</div>';
+function setCategory(c){category=c;categories();renderShops();}
+
+function renderShops(){
+ const q=document.getElementById("search").value.trim().toLowerCase();
+ const list=shops.filter(s=>{
+  const cat=s.data.category||s.data.Category||s.data.التصنيف||s.data.القسم||"";
+  return s.area===area&&(category==="الكل"||cat===category)&&s.name.toLowerCase().includes(q);
+ });
+ document.getElementById("shops").innerHTML=list.length?list.map(s=>
+ `<div class="shop">
+ <div><b>${safe(s.name)}</b><small>${safe(s.area)}</small></div>
+ <button onclick="openShop('${safe(s.id)}')">عرض المحل</button>
+ </div>`).join(""):'<div class="panel">لا توجد محلات بهذا القسم.</div>';
 }
-function openShop(id){
-active=shops.find(s=>s.id===id);
-let d=document.getElementById('details');
-d.classList.remove('hidden');
-d.innerHTML=`<h2>${safe(active.name)}</h2>
-${active.products.map((p,i)=>`
-<div class="product">
-<div><b>${safe(p[0])}</b><br><span class="price">${money(p[1])}</span></div>
-<button onclick="add(${active.id},${i})">أضف للسلة</button>
-</div>`).join('')}`;
-d.scrollIntoView({behavior:'smooth'});
+
+async function openShop(id){
+ activeShop=shops.find(s=>s.id===id);
+ if(!activeShop)return;
+ const d=document.getElementById("details");
+ d.classList.remove("hidden");
+ d.innerHTML=`<h2>${safe(activeShop.name)}</h2><p>جاري تحميل المنتجات...</p>`;
+ d.scrollIntoView({behavior:"smooth"});
+ try{
+  const snap=await db.collection("shops").doc(id).collection("products").get();
+  const products=snap.docs.map(doc=>({id:doc.id,...doc.data()}));
+  d.innerHTML=`<h2>${safe(activeShop.name)}</h2>`+
+   (products.length?products.map(p=>`
+   <div class="product">
+    ${p.imageUrl?`<img src="${safe(p.imageUrl)}" alt="">`:""}
+    <div class="product-info"><b>${safe(p.name)}</b><br><span class="price">${money(p.price)}</span></div>
+    <button onclick="addToCart('${safe(id)}','${safe(p.id)}')">أضف للسلة</button>
+   </div>`).join(""):'<p>لا توجد منتجات مضافة حالياً.</p>');
+ }catch(e){
+  d.innerHTML=`<h2>${safe(activeShop.name)}</h2><p>تعذر تحميل المنتجات. تحقق من قواعد Firestore.</p>`;
+  console.error(e);
+ }
 }
-function add(id,i){
-let s=shops.find(x=>x.id===id);
-if(cart.length&&cart[0].id!==id){
-if(!confirm('السلة فيها منتجات من محل آخر. هل تريد تغيير المحل؟'))return;
-cart=[];
-}
-let p=s.products[i];
-cart.push({id,name:p[0],price:p[1]});
-drawCart();
+
+async function addToCart(shopId,productId){
+ try{
+  const doc=await db.collection("shops").doc(shopId).collection("products").doc(productId).get();
+  if(!doc.exists)return;
+  const p=doc.data();
+  if(cart.length&&cart[0].shopId!==shopId){
+   if(!confirm("السلة تحتوي منتجات من محل آخر. هل تريد تغيير المحل؟"))return;
+   cart=[];
+  }
+  cart.push({shopId,name:p.name,price:Number(p.price||0)});
+  drawCart();
+ }catch(e){alert("تعذر إضافة المنتج للسلة.");}
 }
 function drawCart(){
-document.getElementById('items').innerHTML=cart.length?
-cart.map((x,i)=>`
-<div class="cartline">
-<span>${safe(x.name)}</span>
-<span>${money(x.price)} <button class="secondary" onclick="removeItem(${i})">×</button></span>
-</div>`).join(''):'السلة فارغة';
-document.getElementById('total').textContent=money(cart.reduce((a,x)=>a+x.price,0));
+ document.getElementById("items").innerHTML=cart.length?cart.map((x,i)=>
+ `<div class="cartline"><span>${safe(x.name)}</span>
+ <span>${money(x.price)} <button class="secondary" onclick="removeItem(${i})">×</button></span></div>`
+ ).join(""):"السلة فارغة";
+ document.getElementById("total").textContent=money(cart.reduce((a,x)=>a+x.price,0));
 }
 function removeItem(i){cart.splice(i,1);drawCart();}
-function money(n){return Number(n).toLocaleString('en-US')+' ل.س';}
 function checkout(){
-if(!cart.length){alert('السلة فارغة');return;}
-alert('طلب تجريبي بقيمة '+money(cart.reduce((a,x)=>a+x.price,0))+
-'\nالدفع كاش عند الاستلام.\nلم يتم إرسال الطلب فعلياً إلى محل.');
+ if(!cart.length){alert("السلة فارغة");return;}
+ alert("طلب تجريبي بقيمة "+money(cart.reduce((a,x)=>a+x.price,0))+
+ "\nالدفع كاش عند الاستلام.\nلم يتم إرسال الطلب فعلياً إلى المحل بعد.");
 }
-function showAdd(){document.getElementById('addPanel').classList.remove('hidden');}
-function saveShop(){
-let name=document.getElementById('shopName').value.trim();
-let cat=document.getElementById('shopCategory').value;
-if(!name){alert('اكتب اسم المحل');return;}
-let s={id:Date.now(),area,name,cat,products:[['منتج تجريبي',10000]]};
-extra.push(s);
-shops.push(s);
-localStorage.setItem('wasalni_shops',JSON.stringify(extra));
-document.getElementById('shopName').value='';
-document.getElementById('addPanel').classList.add('hidden');
-render();
-alert('تمت إضافة المحل على هذا الجهاز كتجربة.');
+
+function toggleLogin(){
+ const loginPanel=document.getElementById("loginPanel");
+ if(auth.currentUser&&auth.currentUser.email===ADMIN_EMAIL){
+  document.getElementById("adminPanel").classList.toggle("hidden");
+  loadAdminShopList();
+ }else{
+  loginPanel.classList.toggle("hidden");
+ }
 }
-function safe(s){
-return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function login(){
+ const email=document.getElementById("adminEmail").value.trim().toLowerCase();
+ const password=document.getElementById("adminPassword").value;
+ const msg=document.getElementById("loginMessage");
+ if(email!==ADMIN_EMAIL){msg.textContent="هذا الحساب غير مخوّل للإدارة.";return;}
+ try{
+  await auth.signInWithEmailAndPassword(email,password);
+ }catch(e){msg.textContent="فشل الدخول: "+e.message;}
 }
+auth.onAuthStateChanged(user=>{
+ const admin=user&&user.email&&user.email.toLowerCase()===ADMIN_EMAIL;
+ document.getElementById("adminPanel").classList.toggle("hidden",!admin);
+ document.getElementById("loginPanel").classList.toggle("hidden",!!admin);
+ if(admin){
+  document.getElementById("adminUser").textContent="مسجل الدخول: "+user.email;
+  loadAdminShopList();
+ }else if(user){
+  auth.signOut();
+ }
+});
+async function logout(){await auth.signOut();}
+
+function loadAdminShopList(){
+ const select=document.getElementById("adminShop");
+ const previous=select.value;
+ select.innerHTML=shops.map(s=>
+ `<option value="${safe(s.id)}">${safe(s.name)} — ${safe(s.area)}</option>`
+ ).join("");
+ if(previous&&shops.some(s=>s.id===previous))select.value=previous;
+ loadAdminProducts();
+}
+async function loadAdminProducts(){
+ const id=document.getElementById("adminShop").value;
+ const box=document.getElementById("adminProducts");
+ if(!id){box.innerHTML="لا يوجد محل.";return;}
+ box.innerHTML="جاري التحميل...";
+ try{
+  const snap=await db.collection("shops").doc(id).collection("products").get();
+  currentProducts=snap.docs.map(doc=>({id:doc.id,...doc.data()}));
+  box.innerHTML=currentProducts.length?currentProducts.map(p=>`
+  <div class="product">
+   ${p.imageUrl?`<img src="${safe(p.imageUrl)}" alt="">`:""}
+   <div class="product-info"><b>${safe(p.name)}</b><br><span class="price">${money(p.price)}</span></div>
+   <button class="secondary" onclick="editProduct('${safe(p.id)}')">تعديل</button>
+   <button style="background:#b83232" onclick="deleteProduct('${safe(p.id)}')">حذف</button>
+  </div>`).join(""):"لا توجد منتجات لهذا المحل.";
+ }catch(e){box.innerHTML="تعذر تحميل المنتجات. تحقق من قواعد Firestore.";console.error(e);}
+}
+async function saveProduct(){
+ const shopId=document.getElementById("adminShop").value;
+ const name=document.getElementById("productName").value.trim();
+ const price=Number(document.getElementById("productPrice").value);
+ const file=document.getElementById("productImage").files[0];
+ if(!shopId||!name||!Number.isFinite(price)||price<=0){
+  alert("اختر محلاً واكتب اسم المنتج وسعراً صحيحاً.");return;
+ }
+ try{
+  let imageUrl="";
+  if(file){
+   const path="products/"+shopId+"/"+Date.now()+"_"+file.name.replace(/[^\w.-]/g,"_");
+   const ref=storage.ref().child(path);
+   await ref.put(file);
+   imageUrl=await ref.getDownloadURL();
+  }
+  const data={name,price,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+  if(imageUrl)data.imageUrl=imageUrl;
+  const ref=db.collection("shops").doc(shopId).collection("products");
+  if(editingId){
+   if(!imageUrl){
+    const old=currentProducts.find(p=>p.id===editingId);
+    if(old&&old.imageUrl)data.imageUrl=old.imageUrl;
+   }
+   await ref.doc(editingId).update(data);
+  }else{
+   data.createdAt=firebase.firestore.FieldValue.serverTimestamp();
+   await ref.add(data);
+  }
+  alert("تم حفظ المنتج بنجاح.");
+  resetForm();
+  await loadAdminProducts();
+  if(activeShop&&activeShop.id===shopId)openShop(shopId);
+ }catch(e){alert("لم يتم الحفظ: "+e.message);console.error(e);}
+}
+function editProduct(id){
+ const p=currentProducts.find(x=>x.id===id);
+ if(!p)return;
+ editingId=id;
+ document.getElementById("productName").value=p.name||"";
+ document.getElementById("productPrice").value=p.price||"";
+ document.getElementById("formTitle").textContent="تعديل المنتج";
+ document.getElementById("cancelEdit").classList.remove("hidden");
+ document.getElementById("productForm").scrollIntoView({behavior:"smooth"});
+}
+async function deleteProduct(id){
+ if(!confirm("هل أنت متأكد من حذف هذا المنتج؟"))return;
+ try{
+  await db.collection("shops").doc(document.getElementById("adminShop").value)
+   .collection("products").doc(id).delete();
+  await loadAdminProducts();
+  alert("تم حذف المنتج.");
+ }catch(e){alert("تعذر الحذف: "+e.message);}
+}
+function resetForm(){
+ editingId=null;
+ document.getElementById("productName").value="";
+ document.getElementById("productPrice").value="";
+ document.getElementById("productImage").value="";
+ document.getElementById("formTitle").textContent="إضافة منتج جديد";
+ document.getElementById("cancelEdit").classList.add("hidden");
+}
+
+loadShops();
 </script>
 </body>
 </html>
