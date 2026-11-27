@@ -33,6 +33,10 @@ jobs:
           java-version: 21
 
       - name: Setup Android SDK
+      
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses
+
         uses: android-actions/setup-android@v3
 
       - name: Build APK
