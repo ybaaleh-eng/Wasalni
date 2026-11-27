@@ -1,0 +1,27 @@
+
+workflows:
+  wasalni-android:
+    name: Wasalni Android APK
+    max_build_duration: 60
+    environment:
+      java: 17
+      node: 20
+      groups: []
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+      - name: Build web app
+        script: |
+          npm run build
+      - name: Prepare Android assets
+        script: |
+          npm install @capacitor/android
+          npx cap sync android
+      - name: Build APK
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/apk/debug/app-debug.apk
