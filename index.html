@@ -1,1 +1,348 @@
-<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>وصلني</title><style>body{font-family:Tahoma;margin:0;background:#f4f8f6;color:#173b34}header{background:#087f6b;color:white;padding:28px;border-radius:0 0 24px 24px}main{padding:18px;max-width:620px;margin:auto}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.tile,.store{background:white;padding:16px;border-radius:16px;margin:10px 0}.tile{font-size:20px}button{background:#087f6b;color:white;border:0;padding:12px;border-radius:10px}.store{display:flex;align-items:center;justify-content:space-between;gap:10px}small{color:#64756f}.price{color:#087f6b}#cart{background:white;padding:15px;border-radius:16px;margin-top:15px}</style><header><h1>🚀 وصلني</h1><div>كل طلباتك… لحد باب بيتك</div><p>📍 سوريا</p></header><main><h2>أهلاً فيك! شو بدك تطلب؟</h2><div class="grid"><div class="tile">🍔<br>مطاعم</div><div class="tile">🛒<br>سوبرماركت</div><div class="tile">💊<br>صيدليات</div><div class="tile">📦<br>توصيل أغراض</div></div><h3>متاجر مقترحة – بيانات تجريبية</h3><div class="store"><div>🍔 <b>برغر تايم</b><br><small>مطاعم • 25–40 دقيقة</small><br><span class="price">45,000 ل.س</span></div><button onclick="add('وجبة برغر',45000)">أضف للسلة</button></div><div class="store"><div>🛒 <b>ماركت الحارة</b><br><small>بقالة • 20–35 دقيقة</small><br><span class="price">60,000 ل.س</span></div><button onclick="add('سلة بقالة',60000)">أضف للسلة</button></div><div class="store"><div>💊 <b>صيدلية الشفاء</b><br><small>صيدلية • حسب التوفر</small><br><span class="price">25,000 ل.س</span></div><button onclick="add('طلب صيدلية تجريبي',25000)">أضف للسلة</button></div><section id="cart"><h3>سلة الطلب (<span id="n">0</span>)</h3><div id="items">السلة فارغة</div><b id="sum">0 ل.س</b><p>طريقة الدفع <select id="pay"><option>كاش عند الاستلام</option><option>دفع إلكتروني (غير مربوط)</option></select></p><button onclick="alert('هذه نسخة تجريبية فقط؛ لم يتم إرسال طلب أو تحصيل مبلغ.')">متابعة الطلب التجريبي</button></section><p><small>تنبيه: المتاجر والأسعار تجريبية. لا يوجد اتصال بخادم أو دفع حقيقي في هذه النسخة.</small></p></main><script>let c=[];function add(n,p){c.push({n,p});document.getElementById('n').textContent=c.length;document.getElementById('items').innerHTML=c.map(x=>x.n+' — '+x.p.toLocaleString('en-US')+' ل.س').join('<br>');document.getElementById('sum').textContent=c.reduce((a,x)=>a+x.p,0).toLocaleString('en-US')+' ل.س'}</script></html>
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#087f6b">
+<title>وصلني | كل طلباتك</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f7f6;color:#183c34;font-family:Tahoma,Arial}
+header{background:#087f6b;color:white;padding:22px 17px 25px;border-radius:0 0 25px 25px}
+header h1{margin:0;font-size:29px}
+header p{margin:8px 0 0}
+main{max-width:700px;margin:auto;padding:16px}
+h2{font-size:21px}
+.search{width:100%;padding:15px;border:1px solid #ddd;border-radius:13px;font-size:16px;margin-bottom:16px}
+.categories{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.category{background:white;border:2px solid transparent;border-radius:15px;padding:15px 5px;text-align:center;font-size:14px;cursor:pointer}
+.category .emoji{font-size:29px;display:block;margin-bottom:8px}
+.category.active{border-color:#087f6b;background:#e6f5ef}
+.section{display:flex;justify-content:space-between;align-items:center;margin-top:23px}
+.store,.product,.panel,.cart{background:white;padding:15px;border-radius:15px;margin:10px 0;box-shadow:0 2px 9px #00000008}
+.store{display:flex;align-items:center;gap:12px}
+.store-icon{font-size:35px;background:#eef6f2;padding:12px;border-radius:12px}
+.store-info{flex:1}
+small{color:#73847e}
+button{border:0;border-radius:10px;padding:11px 14px;background:#087f6b;color:white;font-weight:bold;cursor:pointer}
+button.secondary{background:#e8f3ef;color:#087f6b}
+button.danger{background:#b94343}
+.products{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.product{text-align:center;margin:0}
+.product .emoji{font-size:37px;margin:7px}
+.product h3{font-size:15px}
+.price{color:#087f6b;font-weight:bold;margin:10px}
+.product button{width:100%}
+.hidden{display:none!important}
+.cart{margin-top:22px}
+.cart-line{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eee;gap:8px}
+input,select{padding:12px;border:1px solid #ddd;border-radius:10px;width:100%;font-size:15px;margin:6px 0 12px}
+label{font-size:14px;font-weight:bold}
+.full{width:100%;margin-top:10px}
+footer{text-align:center;color:#82918c;padding:25px;font-size:12px}
+.notice{background:#fff6df;padding:12px;border-radius:10px;color:#73551b;font-size:13px;line-height:1.8}
+</style>
+</head>
+<body>
+
+<header>
+<h1>🚀 وصلني</h1>
+<p>كل طلباتك... لحد باب بيتك</p>
+<p>📍 نخدم جميع محافظات سوريا</p>
+</header>
+
+<main>
+<h2>أهلاً فيك! شو بدك تطلب؟</h2>
+
+<input class="search" id="search" placeholder="🔍 ابحث عن محل أو منتج..." oninput="render()">
+
+<div class="categories" id="categories">
+<div class="category active" onclick="setCategory('all',this)"><span class="emoji">🛍️</span>الكل</div>
+<div class="category" onclick="setCategory('grocery',this)"><span class="emoji">🛒</span>بقالية</div>
+<div class="category" onclick="setCategory('meat',this)"><span class="emoji">🥩</span>لحومات</div>
+<div class="category" onclick="setCategory('restaurant',this)"><span class="emoji">🍔</span>مطاعم</div>
+<div class="category" onclick="setCategory('quick',this)"><span class="emoji">⚡</span>طلبات سريعة</div>
+<div class="category" onclick="setCategory('pharmacy',this)"><span class="emoji">💊</span>صيدليات</div>
+</div>
+
+<div class="section">
+<h2>🏪 المحلات المتاحة</h2>
+</div>
+<div id="stores"></div>
+
+<div class="section">
+<h2 id="productsTitle">🛍️ المنتجات</h2>
+</div>
+<div class="products" id="products"></div>
+
+<div class="cart" id="cart">
+<h2>🛒 سلة مشترياتك (<span id="count">0</span>)</h2>
+<div id="cartItems">السلة فارغة</div>
+<h3>الإجمالي: <span id="total">0</span> ل.س</h3>
+
+<label>اسم الزبون</label>
+<input id="customer" placeholder="اكتب اسمك">
+
+<label>رقم الهاتف</label>
+<input id="phone" type="tel" placeholder="رقم الهاتف">
+
+<label>المحافظة</label>
+<select id="city">
+<option>دمشق</option>
+<option>ريف دمشق</option>
+<option>حلب</option>
+<option>حمص</option>
+<option>حماة</option>
+<option>اللاذقية</option>
+<option>طرطوس</option>
+<option>إدلب</option>
+<option>درعا</option>
+<option>السويداء</option>
+<option>القنيطرة</option>
+<option>دير الزور</option>
+<option>الرقة</option>
+<option>الحسكة</option>
+</select>
+
+<label>العنوان بالتفصيل</label>
+<input id="address" placeholder="الشارع والمنطقة ورقم البناء">
+
+<label>طريقة الدفع</label>
+<select id="payment">
+<option>كاش عند الاستلام</option>
+</select>
+
+<button class="full" onclick="checkout()">تأكيد الطلب التجريبي</button>
+</div>
+
+<div class="panel">
+<h2>🔐 إدارة وصلني</h2>
+<p>أضف محلات جديدة ومنتجاتها للتجربة على هذا الجهاز.</p>
+<label>اسم المحل</label>
+<input id="newStore" placeholder="مثلاً: ماركت الأمانة">
+<label>نوع المحل</label>
+<select id="newType">
+<option value="grocery">بقالية</option>
+<option value="meat">لحومات</option>
+<option value="restaurant">مطاعم</option>
+<option value="quick">طلبات سريعة</option>
+<option value="pharmacy">صيدليات</option>
+</select>
+<button class="full" onclick="addStore()">إضافة محل</button>
+
+<hr style="border:0;border-top:1px solid #eee;margin:18px 0">
+
+<label>اختر المحل لإضافة منتج</label>
+<select id="storeSelect"></select>
+<label>اسم المنتج</label>
+<input id="newProduct" placeholder="اسم المنتج">
+<label>السعر بالليرة السورية</label>
+<input id="newPrice" type="number" placeholder="السعر">
+<button class="full" onclick="addProduct()">إضافة المنتج</button>
+</div>
+
+<div class="notice">
+⚠️ هذه نسخة تجريبية محلية. الطلبات والمنتجات تحفظ على الجهاز فقط. لم يتم بعد ربط المحلات أو المندوبين بخادم مركزي، ولا يتم إرسال طلب حقيقي.
+</div>
+</main>
+
+<footer>وصلني © 2026 - جميع الحقوق محفوظة</footer>
+
+<script>
+const defaults=[
+{id:1,name:"ماركت الحارة",type:"grocery",icon:"🛒",products:[
+{name:"رز",price:15000,icon:"🍚"},
+{name:"سكر",price:12000,icon:"🧂"},
+{name:"زيت",price:25000,icon:"🫒"},
+{name:"حليب",price:10000,icon:"🥛"}]},
+{id:2,name:"ملحمة الطيب",type:"meat",icon:"🥩",products:[
+{name:"لحم غنم",price:120000,icon:"🥩"},
+{name:"لحم عجل",price:95000,icon:"🥩"},
+{name:"دجاج",price:45000,icon:"🍗"}]},
+{id:3,name:"برغر تايم",type:"restaurant",icon:"🍔",products:[
+{name:"وجبة برغر",price:45000,icon:"🍔"},
+{name:"بيتزا",price:55000,icon:"🍕"},
+{name:"بطاطا",price:15000,icon:"🍟"}]},
+{id:4,name:"طلباتك السريعة",type:"quick",icon:"⚡",products:[
+{name:"مياه",price:8000,icon:"💧"},
+{name:"غاز",price:12000,icon:"🔥"},
+{name:"مستلزمات منزلية",price:20000,icon:"📦"}]},
+{id:5,name:"صيدلية الشفاء",type:"pharmacy",icon:"💊",products:[
+{name:"مستلزمات صحية",price:12000,icon:"🩹"},
+{name:"فيتامينات تجريبية",price:25000,icon:"💊"}]}
+];
+
+let stores=JSON.parse(localStorage.getItem("wasalniStores")||"null")||defaults;
+let cart=[];
+let category="all";
+let selectedStore=null;
+
+function save(){
+localStorage.setItem("wasalniStores",JSON.stringify(stores));
+}
+
+function setCategory(type,element){
+category=type;
+document.querySelectorAll(".category").forEach(x=>x.classList.remove("active"));
+element.classList.add("active");
+selectedStore=null;
+render();
+}
+
+function money(n){
+return Number(n).toLocaleString("en-US");
+}
+
+function render(){
+const q=document.getElementById("search").value.trim().toLowerCase();
+const filtered=stores.filter(s=>
+(category==="all"||s.type===category)&&
+(s.name.toLowerCase().includes(q)||s.products.some(p=>p.name.toLowerCase().includes(q)))
+);
+
+document.getElementById("stores").innerHTML=filtered.map(s=>`
+<div class="store">
+<div class="store-icon">${s.icon}</div>
+<div class="store-info">
+<strong>${s.name}</strong><br>
+<small>${typeName(s.type)} • توصيل حسب المنطقة</small><br>
+<small>${s.products.length} منتجات</small>
+</div>
+<button onclick="openStore(${s.id})">تصفح</button>
+</div>`).join("")||"<p>لا توجد محلات مطابقة.</p>";
+
+if(selectedStore!==null){
+const s=stores.find(x=>x.id===selectedStore);
+if(!s){selectedStore=null}
+else{
+document.getElementById("productsTitle").textContent="منتجات "+s.name;
+document.getElementById("products").innerHTML=s.products
+.filter(p=>p.name.toLowerCase().includes(q))
+.map((p,i)=>`
+<div class="product">
+<div class="emoji">${p.icon||"📦"}</div>
+<h3>${p.name}</h3>
+<div class="price">${money(p.price)} ل.س</div>
+<button onclick="addToCart(${s.id},${i})">أضف للسلة</button>
+</div>`).join("")||"<p>لا توجد منتجات.</p>";
+return;
+}
+}
+
+document.getElementById("productsTitle").textContent="🛍️ منتجات المحلات";
+const products=[];
+filtered.forEach(s=>s.products.forEach((p,i)=>{
+if(p.name.toLowerCase().includes(q)){
+products.push({store:s,p,index:i});
+}
+}));
+document.getElementById("products").innerHTML=products.map(x=>`
+<div class="product">
+<div class="emoji">${x.p.icon||"📦"}</div>
+<h3>${x.p.name}</h3>
+<small>${x.store.name}</small>
+<div class="price">${money(x.p.price)} ل.س</div>
+<button onclick="addToCart(${x.store.id},${x.index})">أضف للسلة</button>
+</div>`).join("");
+}
+
+function typeName(t){
+return {grocery:"بقالية",meat:"لحومات",restaurant:"مطاعم",quick:"طلبات سريعة",pharmacy:"صيدليات"}[t]||"محل";
+}
+
+function openStore(id){
+selectedStore=id;
+render();
+document.getElementById("productsTitle").scrollIntoView({behavior:"smooth"});
+}
+
+function addToCart(storeId,index){
+const s=stores.find(x=>x.id===storeId);
+const p=s.products[index];
+cart.push({name:p.name,price:Number(p.price),store:s.name});
+renderCart();
+}
+
+function renderCart(){
+document.getElementById("count").textContent=cart.length;
+document.getElementById("cartItems").innerHTML=cart.length?
+cart.map((x,i)=>`
+<div class="cart-line">
+<span>${x.name}<br><small>${x.store}</small></span>
+<span>${money(x.price)} ل.س
+<button class="danger" onclick="removeItem(${i})">×</button></span>
+</div>`).join(""):"السلة فارغة";
+document.getElementById("total").textContent=money(cart.reduce((a,x)=>a+x.price,0));
+}
+
+function removeItem(i){
+cart.splice(i,1);
+renderCart();
+}
+
+function checkout(){
+if(!cart.length)return alert("السلة فارغة");
+const name=document.getElementById("customer").value.trim();
+const phone=document.getElementById("phone").value.trim();
+const address=document.getElementById("address").value.trim();
+if(!name||!phone||!address)return alert("يرجى إدخال الاسم ورقم الهاتف والعنوان");
+const order={
+number:Date.now(),
+name,phone,address,
+city:document.getElementById("city").value,
+payment:"كاش عند الاستلام",
+items:cart,
+total:cart.reduce((a,x)=>a+x.price,0),
+status:"تجريبي - غير مرسل"
+};
+let orders=JSON.parse(localStorage.getItem("wasalniOrders")||"[]");
+orders.push(order);
+localStorage.setItem("wasalniOrders",JSON.stringify(orders));
+alert("تم حفظ الطلب التجريبي على هذا الجهاز. رقم الطلب: "+order.number+" — لم يتم إرساله للمحل أو المندوب.");
+cart=[];
+renderCart();
+}
+
+function addStore(){
+const name=document.getElementById("newStore").value.trim();
+const type=document.getElementById("newType").value;
+if(!name)return alert("اكتب اسم المحل");
+stores.push({
+id:Date.now(),
+name,type,
+icon:{grocery:"🛒",meat:"🥩",restaurant:"🍔",quick:"⚡",pharmacy:"💊"}[type],
+products:[]
+});
+save();
+document.getElementById("newStore").value="";
+updateStoreSelect();
+render();
+alert("تمت إضافة المحل محلياً بنجاح");
+}
+
+function updateStoreSelect(){
+document.getElementById("storeSelect").innerHTML=
+stores.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+}
+
+function addProduct(){
+const id=Number(document.getElementById("storeSelect").value);
+const s=stores.find(x=>x.id===id);
+const name=document.getElementById("newProduct").value.trim();
+const price=Number(document.getElementById("newPrice").value);
+if(!s||!name||!price||price<1)return alert("أدخل اسم المنتج وسعر صحيح");
+s.products.push({name,price,icon:"📦"});
+save();
+document.getElementById("newProduct").value="";
+document.getElementById("newPrice").value="";
+render();
+alert("تمت إضافة المنتج");
+}
+
+updateStoreSelect();
+render();
+renderCart();
+</script>
+</body>
+</html>
